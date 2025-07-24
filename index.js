@@ -1,102 +1,53 @@
+// index.js
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// 1) Lista e origin‐eve që lejohen
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://FRONTEND-IMLIVE.vercel.app'  // ndrysho me domain‐in tënd të prod
+];
+
+// 2) Middleware për CORS (duhet PARA express.json() dhe PARA rrugëve)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    // reflekto origin‐in vetëm nëse është në listë
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  // lejo credential‐at
+  res.header('Access-Control-Allow-Credentials', 'true');
+  // lejo këto headers
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+  // lejo këto metoda
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+  );
+  // për OPTIONS (preflight) përgjigju menjëherë
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 
-// Krijo lidhjen me databazë
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
-});
-
-// Testo lidhjen me databazë
-db.connect(err => {
-  if (err) {
-    console.error('Error connecting to database:', err);
-    return;
-  }
-  console.log('Connected to database!');
-});
-
-// Rute testuese
+// 3) rrugët e tua  
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend funksional!' });
 });
 
-// Merr të gjithë produktet
-app.get('/api/products', (req, res) => {
-  db.query('SELECT * FROM products', (err, results) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json(results);
-  });
-});
-
-// Merr një produkt të vetëm (by id)
-app.get('/api/products/:id', (req, res) => {
-  const { id } = req.params;
-  db.query('SELECT * FROM products WHERE id=?', [id], (err, results) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    if (results.length === 0) return res.status(404).json({ error: 'Product not found' });
-    res.json(results[0]);
-  });
-});
-
-// Shto produkt të ri
-app.post('/api/products', (req, res) => {
-  const { name, price, description } = req.body;
-  db.query(
-    'INSERT INTO products (name, price, description) VALUES (?, ?, ?)',
-    [name, price, description],
-    (err, result) => {
-      if (err) {
-        console.error('Error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({ id: result.insertId, name, price, description });
-    }
-  );
-});
-
-// Përditëso produkt
-app.put('/api/products/:id', (req, res) => {
-  const { name, price, description } = req.body;
-  const { id } = req.params;
-  db.query(
-    'UPDATE products SET name=?, price=?, description=? WHERE id=?',
-    [name, price, description, id],
-    (err) => {
-      if (err) {
-        console.error('Error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({ id, name, price, description });
-    }
-  );
-});
-
-// Fshi produkt
-app.delete('/api/products/:id', (req, res) => {
-  const { id } = req.params;
-  db.query('DELETE FROM products WHERE id=?', [id], (err) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json({ message: 'Product deleted', id });
-  });
-});
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
