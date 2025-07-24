@@ -24,10 +24,12 @@ db.connect(err => {
   console.log('Connected to database!');
 });
 
-// Shembull rute testuese
+// Rute testuese
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend funksional!' });
 });
+
+// Merr të gjithë produktet
 app.get('/api/products', (req, res) => {
   db.query('SELECT * FROM products', (err, results) => {
     if (err) {
@@ -37,5 +39,64 @@ app.get('/api/products', (req, res) => {
     res.json(results);
   });
 });
+
+// Merr një produkt të vetëm (by id)
+app.get('/api/products/:id', (req, res) => {
+  const { id } = req.params;
+  db.query('SELECT * FROM products WHERE id=?', [id], (err, results) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (results.length === 0) return res.status(404).json({ error: 'Product not found' });
+    res.json(results[0]);
+  });
+});
+
+// Shto produkt të ri
+app.post('/api/products', (req, res) => {
+  const { name, price, description } = req.body;
+  db.query(
+    'INSERT INTO products (name, price, description) VALUES (?, ?, ?)',
+    [name, price, description],
+    (err, result) => {
+      if (err) {
+        console.error('Error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json({ id: result.insertId, name, price, description });
+    }
+  );
+});
+
+// Përditëso produkt
+app.put('/api/products/:id', (req, res) => {
+  const { name, price, description } = req.body;
+  const { id } = req.params;
+  db.query(
+    'UPDATE products SET name=?, price=?, description=? WHERE id=?',
+    [name, price, description, id],
+    (err) => {
+      if (err) {
+        console.error('Error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json({ id, name, price, description });
+    }
+  );
+});
+
+// Fshi produkt
+app.delete('/api/products/:id', (req, res) => {
+  const { id } = req.params;
+  db.query('DELETE FROM products WHERE id=?', [id], (err) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ message: 'Product deleted', id });
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
