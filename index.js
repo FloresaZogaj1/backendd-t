@@ -28,6 +28,14 @@ db.connect(err => {
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend funksional!' });
 });
-
+app.get('/api/products', (req, res) => {
+  db.query('SELECT * FROM products', (err, results) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
