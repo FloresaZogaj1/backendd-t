@@ -10,7 +10,6 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://topmobile.vercel.app',
-    'https://backendd-t-production-f7ae.up.railway.app' // nëse ke deploy, shto edhe domainin e frontend-it
   ],
   credentials: true // nëse përdor cookie për auth
 }));
