@@ -1,70 +1,41 @@
-// controllers/authController.js
+const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ndonjë_fjalëkalim_sfhetë';
-
-exports.register = (req, res) => {
+exports.register = async (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Të dhënat mungojnë!' });
-  }
+  try {
+    // kontrollo nese ekziston
+    const [user] = await db.query('SELECT * FROM users_new WHERE email = ?', [email]);
+    if (user.length > 0) return res.status(400).json({ msg: 'Email ekziston!' });
 
-  // Kontrollo nëse email-i ekziston
-  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-    if (err) return res.status(500).json({ message: 'Gabim DB' });
-    if (results.length) {
-      return res.status(409).json({ message: 'Email-i ekziston!' });
-    }
+    // Gjej id-n me te madh ekzistues
+    const [last] = await db.query('SELECT MAX(id) as maxId FROM users_new');
+    const newId = (last[0].maxId || 0) + 1;
 
-    // Hash fjalëkalimin
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(password, salt);
-
-    // Shto user
-    db.query(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hash],
-      (err, result) => {
-        if (err) return res.status(500).json({ message: 'Gabim gjatë regjistrimit' });
-        res.status(201).json({ message: 'Regjistrim i suksesshëm!' });
-      }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db.query(
+      'INSERT INTO users_new (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
+      [newId, name, email, hashedPassword, 'user']
     );
-  });
+    res.json({ msg: 'Regjistrimi me sukses!' });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
 };
 
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email dhe fjalëkalim kërkohen!' });
+  try {
+    const [user] = await db.query('SELECT * FROM users_new WHERE email = ?', [email]);
+    if (user.length === 0) return res.status(400).json({ msg: 'Email ose password gabim!' });
+
+    const isMatch = await bcrypt.compare(password, user[0].password);
+    if (!isMatch) return res.status(400).json({ msg: 'Email ose password gabim!' });
+
+    const token = jwt.sign({ id: user[0].id, role: user[0].role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user[0].id, name: user[0].name, email: user[0].email, role: user[0].role } });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
   }
-
-  // Gjej user
-  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-    if (err) return res.status(500).json({ message: 'Gabim DB' });
-    if (!results.length) {
-      return res.status(401).json({ message: 'Email ose fjalëkalim gabim!' });
-    }
-    const user = results[0];
-
-    // Komparo fjalëkalimet
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Email ose fjalëkalim gabim!' });
-    }
-
-    // Gjenero JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    res.json({
-      message: 'Login i suksesshëm!',
-      token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
-    });
-  });
 };
