@@ -16,14 +16,15 @@ router.get('/', verifyToken, isAdmin, async (req, res) => {
 // Shto një garancion të ri (mund edhe klienti)
 router.post('/', verifyToken, async (req, res) => {
   const {
-    emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, // frontend dërgon softInfo
+    emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo,
     kohezgjatja, cmimi, data, komente, llojiPageses, status
   } = req.body;
 
   try {
     await db.query(
-      `INSERT INTO warranty (emri, mbiemri, telefoni, email, marka, modeli, imei, softinfo, kohezgjatja, cmimi, data, komente, llojiPageses, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO warranty
+        (emri, mbiemri, telefoni, email, marka, modeli, imei, softinfo, kohezgjatja, cmimi, data, komente, llojiPageses, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, kohezgjatja, cmimi, data, komente, llojiPageses, status || 'printed']
     );
     res.json({ msg: "Garancioni u shtua me sukses!" });
@@ -31,6 +32,8 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 });
+
+
 router.post('/test', (req, res) => {
   res.json({ msg: "Warranty test route ok!" });
 });
