@@ -23,7 +23,7 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     await db.query(
       `INSERT INTO warranty (emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, kohezgjatja, cmimi, data, komente, llojiPageses, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, kohezgjatja, cmimi, data, komente, llojiPageses, status || 'printed']
     );
     res.json({ msg: "Garancioni u shtua me sukses!" });
