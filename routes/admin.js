@@ -40,6 +40,7 @@ router.get("/users_new", verifyToken, isAdmin, async (req, res) => {
   }
 });
 
+
 // Statistikat
 router.get("/stats", verifyToken, isAdmin, async (req, res) => {
   try {
