@@ -59,4 +59,41 @@ router.get("/stats", verifyToken, isAdmin, async (req, res) => {
   }
 });
 
+// Warranty endpoints for admin
+router.get("/warranty", verifyToken, isAdmin, async (req, res) => {
+  try {
+    const [warranties] = await db.query('SELECT * FROM warranty ORDER BY id DESC');
+    res.json(warranties);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.post("/warranty", verifyToken, async (req, res) => {
+  const {
+    emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo,
+    kohezgjatja, cmimi, data, komente, llojiPageses, status
+  } = req.body;
+
+  try {
+    await db.query(
+      `INSERT INTO warranty (emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, kohezgjatja, cmimi, data, komente, llojiPageses, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [emri, mbiemri, telefoni, email, marka, modeli, imei, softInfo, kohezgjatja, cmimi, data, komente, llojiPageses, status || 'printed']
+    );
+    res.json({ msg: "Garancioni u shtua me sukses!" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
+router.delete("/warranty/:id", verifyToken, isAdmin, async (req, res) => {
+  try {
+    await db.query('DELETE FROM warranty WHERE id = ?', [req.params.id]);
+    res.json({ msg: "Garancioni u fshi me sukses!" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+});
+
 module.exports = router;
