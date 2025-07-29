@@ -3,6 +3,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products'); // ose routes tjera
 const warrantyRoutes = require('./routes/warranty');
+const adminRoutes = require("./routes/admin");
+
 
 const port = process.env.PORT || 5000;
 
@@ -23,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/warranty', warrantyRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.get('/', (req, res) => res.send('API is running 🚀'));
