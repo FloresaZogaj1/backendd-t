@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products'); // ose routes tjera
-const warrantyRoutes = require('./routes/admin');
+const adminRoutes = require('./routes/admin');
+const warrantyRoutes = require('./routes/warranty');
 
 
 const port = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use(cors({
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/admin/warranty', warrantyRoutes);
 
 
